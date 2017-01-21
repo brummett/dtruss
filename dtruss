@@ -17,10 +17,11 @@
 #          -e              # print elapsed times (us)
 #          -f              # follow children as they are forked
 #          -l              # force printing of pid/lwpid per line
-#          -o              # print on cpu times (us)
+#          -x              # print on cpu (execution) times (us)
 #          -s              # print stack backtraces
 #          -L              # don't print pid/lwpid per line
 #          -b bufsize      # dynamic variable buf size (default is "4m")
+#          -o filename     # send output to the named file (default: stderr)
 #  eg,
 #       dtruss df -h       # run and examine the "df -h" command
 #       dtruss -p 1871     # examine PID 1871
@@ -72,9 +73,10 @@ opt_elapsed=0; opt_cpu=0; opt_counts=0;
 opt_relative=0; opt_printid=0; opt_follow=0
 opt_command=0; command=""; opt_buf=0; buf="4m"
 opt_trace=0; trace="."; opt_stack=0;
+opt_output="/dev/stderr";
 
 ### Process options
-while getopts ab:cdefhln:op:st:L name
+while getopts ab:cdefhln:o:p:st:xL name
 do
         case $name in
 	b)	opt_buf=1; buf=$OPTARG ;;
@@ -88,7 +90,8 @@ do
 	e)	opt_elapsed=1 ;;
 	f)	opt_follow=1 ;;
 	l)	opt_printid=1 ;;
-	o)	opt_cpu=1 ;;
+	o)	opt_output=$OPTARG ;;
+	x)	opt_cpu=1 ;;
 	L)	opt_printid=-1 ;;
 	s)	opt_stack=-1 ;;
         h|?)    cat <<-END >&2
@@ -103,10 +106,11 @@ do
 		          -e              # print elapsed times (us)
 		          -f              # follow children
 		          -l              # force printing pid/lwpid
-		          -o              # print on cpu times
+		          -x              # print on cpu (execution) times
 		          -s              # print stack backtraces
 		          -L              # don't print pid/lwpid
 		          -b bufsize      # dynamic variable buf size
+		          -o filename     # send output to the named file (default: stderr)
 		   eg,
 		       dtruss df -h       # run and examine "df -h"
 		       dtruss -p 1871     # examine PID 1871
@@ -682,7 +686,7 @@ dtrace='
 # data going to the target's stdout
 if [ $opt_command -eq 1 ]; then
 	/usr/sbin/dtrace -x dynvarsize=$buf -x evaltime=exec -n "$dtrace" \
-	    -c "$command" -o /dev/stderr
+	    -c "$command" -o "$opt_output"
 else
-	/usr/sbin/dtrace -x dynvarsize=$buf -n "$dtrace" -o /dev/stderr
+	/usr/sbin/dtrace -x dynvarsize=$buf -n "$dtrace" -o "$opt_output"
 fi
